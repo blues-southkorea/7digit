@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7‑Segment Partial Reveal Demo</title>
+<style>
+body{font-family:sans-serif;padding:20px;background:#f2f2f2;}
+#controls{margin-bottom:20px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;}
+.digit{width:44px;height:80px;position:relative;margin:4px;}
+.numberGroup{display:inline-flex;flex-direction:column;align-items:center;margin:0 40px;}
+.digitsRow{display:flex;flex-wrap:nowrap;}
+.valueLabel{font-size:0.9rem;margin-top:6px;color:#333;}
+/* === 7‑segment styles === */
+.segment{position:absolute;background:#444;opacity:0.15;clip-path:polygon(10% 0,90% 0,100% 50%,90% 100%,10% 100%,0 50%);}/* horizontal */
+.segment.b,.segment.c,.segment.e,.segment.f{clip-path:polygon(50% 0,100% 10%,100% 90%,50% 100%,0 90%,0 10%);}/* vertical */
+.segment.on{background:#000;opacity:1;}
+.masked .segment.on{background:#c00;}/* red masked */
+/* segment positions */
+.segment.a{top:0;left:10%;width:80%;height:14%;}
+.segment.d{bottom:0;left:10%;width:80%;height:14%;}
+.segment.g{top:43%;left:10%;width:80%;height:14%;}
+.segment.b{top:7%;right:0;width:14%;height:43%;}
+.segment.c{bottom:7%;right:0;width:14%;height:43%;}
+.segment.f{top:7%;left:0;width:14%;height:43%;}
+.segment.e{bottom:7%;left:0;width:14%;height:43%;}
+input[type="text"]{padding:4px 8px;font-size:1rem;width:200px;}
+input[type="range"]{cursor:pointer;}
+label{display:flex;align-items:center;gap:6px;}
+/* ---------- Responsive tweaks ---------- */
+@media (max-width: 768px){
+  .digit{width:32px;height:60px;margin:3px;}
+  .numberGroup{margin:0 24px;}
+  .valueLabel{font-size:0.8rem;}
+}
+@media (max-width: 480px){
+  body{padding:12px;}
+  #controls{flex-direction:column;align-items:flex-start;gap:12px;}
+  .digit{width:26px;height:48px;margin:2px;}
+  .numberGroup{margin:0 16px;}
+  .valueLabel{font-size:0.75rem;}
+  input[type="text"]{width:160px;}
+}
+</style>
+</head>
+<body>
+<h1>7‑Segment Partial Reveal Demo</h1>
+<div id="controls">
+  <label>Number:
+    <input type="text" id="numberInput" value="400000" pattern="[0-9]*" title="Digits only">
+  </label>
+  <label>Range:
+    <input type="range" id="rangeSlider" min="0" max="3" step="1" value="1">
+    <span id="rangeVal">10%</span>
+  </label>
+  <button id="refresh">Refresh</button>
+</div>
+<div id="display"></div>
+<script>
+const SEG_TABLE={0:["a","b","c","d","e","f"],1:["b","c"],2:["a","b","d","e","g"],3:["a","b","c","d","g"],4:["b","c","f","g"],5:["a","c","d","f","g"],6:["a","c","d","e","f","g"],7:["a","b","c"],8:["a","b","c","d","e","f","g"],9:["a","b","c","d","f","g"]};
+const SEG_FREQ={a:9,b:8,c:8,d:7,e:6,f:6,g:7};
+const MAX_FREQ=Math.max(...Object.values(SEG_FREQ));
+const SEG_WEIGHT=Object.fromEntries(Object.entries(SEG_FREQ).map(([k,v])=>[k,(MAX_FREQ+1)-v]));
+const RANGE_VALUES=[5,10,15,20];
+function weightedPick(arr,w){const t=arr.reduce((s,c)=>s+w[c],0);let r=Math.random()*t;for(const s of arr){r-=w[s];if(r<=0)return s;}return arr[arr.length-1];}
+function partialSegments(d){const S=[...SEG_TABLE[d]];let r=Math.floor(Math.random()*3)+1;r=Math.min(r,S.length-1);const rem=new Set();const avail=[...S];while(rem.size<r){const p=weightedPick(avail,SEG_WEIGHT);rem.add(p);avail.splice(avail.indexOf(p),1);}return S.filter(s=>!rem.has(s));}
+function drawDigit(el,on){el.innerHTML="";["a","b","c","d","e","f","g"].forEach(s=>{const dv=document.createElement("div");dv.className="segment "+s+(on.includes(s)?" on":"");el.appendChild(dv);});}
+function maskIdx(chars){const ms=chars.findIndex(ch=>ch!="0");return (ms!==-1&&ms+1<chars.length)?ms+1:-1;}
+function formatNum(n){return n.toLocaleString();}
+function render(){const numStr=document.getElementById("numberInput").value.trim();const disp=document.getElementById("display");disp.innerHTML="";if(!/^[0-9]+$/.test(numStr)) return;const base=parseInt(numStr,10);const pct=RANGE_VALUES[parseInt(document.getElementById("rangeSlider").value,10)];document.getElementById("rangeVal").textContent=pct+"%";
+ const low=Math.round(base*(1-pct/100));const high=Math.round(base*(1+pct/100));
+ [low,base,high].forEach(val=>{const group=document.createElement("div");group.className="numberGroup";
+ const digitsRow=document.createElement("div");digitsRow.className="digitsRow";
+ const chars=[...String(val)];const mIdx=maskIdx(chars);
+ chars.forEach((ch,i)=>{const digit=parseInt(ch);const segs=(i===mIdx)?partialSegments(digit):SEG_TABLE[digit];const dEl=document.createElement("div");dEl.className="digit"+(i===mIdx?" masked":"");drawDigit(dEl,segs);digitsRow.appendChild(dEl);});
+ group.appendChild(digitsRow);
+ const lbl=document.createElement("div");lbl.className="valueLabel";lbl.textContent=formatNum(val);group.appendChild(lbl);
+ disp.appendChild(group);});}
+/* events */
+['input','change'].forEach(evt=>{document.getElementById("numberInput").addEventListener(evt,render);document.getElementById("rangeSlider").addEventListener(evt,render);});
+document.getElementById("refresh").addEventListener("click",render);
+render();
+</script>
+</body>
+</html>
