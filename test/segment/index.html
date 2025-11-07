@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>7세그먼트 숫자 미리보기</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+  </head>
+  <body
+    style="
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial,
+        Apple SD Gothic Neo, Noto Sans KR, 'Malgun Gothic', sans-serif;
+      padding: 20px;
+    "
+  >
+    <h1 style="margin: 0 0 16px">Hiddenprice-test</h1>
+    <!-- [추가] 상품 기본정보 + 사진 업로드 -->
+    <div
+      style="
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-width: 640px;
+        margin: 0 0 16px;
+      "
+    >
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>상품명</span>
+        <input
+          id="productName"
+          type="text"
+          placeholder="예: Vintage Denim Jacket"
+          style="
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+          "
+        />
+      </label>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>브랜드</span>
+        <input
+          id="productBrand"
+          type="text"
+          placeholder="예: Levi's"
+          style="
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+          "
+        />
+      </label>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>사이즈</span>
+        <input
+          id="productSize"
+          type="text"
+          placeholder="예: M / 26 / 260"
+          style="
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+          "
+        />
+      </label>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>상품 사진 업로드 (여러 장 선택 가능)</span>
+        <input
+          id="photoInput"
+          type="file"
+          accept="image/*"
+          multiple
+          style="
+            padding: 10px 12px;
+            font-size: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+          "
+        />
+        <small style="opacity: 0.8"
+          >JPG/PNG 등 이미지 파일을 선택하세요. 썸네일이 아래에 미리보기로
+          표시됩니다.</small
+        >
+      </label>
+
+      <!-- 미리보기 그리드 -->
+      <div
+        id="photoPreview"
+        style="
+          display: grid;
+          grid-template-columns: repeat(5, minmax(80px, 1fr));
+          gap: 8px;
+        "
+      ></div>
+    </div>
+
+    <!-- 입력 영역 -->
+    <div
+      style="display: flex; flex-direction: column; gap: 12px; max-width: 640px"
+    >
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>기준값 (숫자만 입력)</span>
+        <input
+          id="baselineInput"
+          type="text"
+          inputmode="numeric"
+          placeholder="예: 100000"
+          style="
+            padding: 10px 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+          "
+          value="100000"
+        />
+      </label>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span>범위 슬라이더 (5 ~ 20)</span>
+        <input
+          id="rangeSlider"
+          type="range"
+          min="5"
+          max="20"
+          step="1"
+          value="5"
+        />
+        <small id="rangeLabel" style="opacity: 0.8"
+          >현재 범위: ±5‰ (±0.5%)</small
+        >
+      </label>
+
+      <div style="font-size: 13px; line-height: 1.4; color: #555">
+        ※ 예시를 따르기 위해 <b>슬라이더 N을 퍼밀(‰)</b>로 해석합니다.
+        <b>±N‰ = ±(N/10)%</b>.
+      </div>
+
+      <button
+        id="renderBtn"
+        style="
+          width: 160px;
+          padding: 10px 12px;
+          font-size: 15px;
+          border: 1px solid #222;
+          background: #111;
+          color: #fff;
+          border-radius: 8px;
+          cursor: pointer;
+        "
+      >
+        7세그먼트 생성
+      </button>
+      <button
+        id="openPreview"
+        style="
+          margin-left: 8px;
+          width: 120px;
+          padding: 10px 12px;
+          font-size: 15px;
+          border: 1px solid #666;
+          background: #fff;
+          color: #111;
+          border-radius: 8px;
+          cursor: pointer;
+        "
+      >
+        미리보기
+      </button>
+
+      <!-- 출력 모드 선택 -->
+      <div
+        id="modeControls"
+        style="margin-top: 10px; display: flex; gap: 8px; align-items: center"
+      >
+        <span style="font-size: 13px; color: #666">출력 모드:</span>
+        <button
+          id="modeNormal"
+          type="button"
+          style="
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            background: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+          "
+        >
+          기본
+        </button>
+        <button
+          id="mode1"
+          type="button"
+          style="
+            padding: 6px 10px;
+            border: 1px solid #111;
+            background: #111;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+          "
+        >
+          모드1 (모호화)
+        </button>
+        <button
+          id="mode2"
+          type="button"
+          style="
+            padding: 6px 10px;
+            border: 1px solid #0f172a;
+            background: #0f172a;
+            color: #fff;
+            border-radius: 8px;
+            cursor: pointer;
+          "
+        >
+          모드2 (가림막 수동)
+        </button>
+        <!-- modeControls 내부의 세 버튼 다음에 바로 추가 -->
+        <button
+          id="toggleBasePanel"
+          type="button"
+          style="
+            padding: 6px 10px;
+            border: 1px solid #ef4444;
+            background: #fff;
+            color: #ef4444;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-left: 8px;
+          "
+        >
+          기준 패널 숨기기
+        </button>
+      </div>
+    </div>
+
+    <hr style="margin: 24px 0" />
+
+    <!-- (옵션) 텍스트 요약 카드 -->
+    <div
+      id="textResults"
+      style="
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        margin: 16px 0 12px;
+      "
+    ></div>
+
+    <!-- 7세그 영역: 필요 타겟만 배치 -->
+    <div id="segments" style="display: flex; gap: 24px; flex-wrap: wrap">
+      <!-- 세 값 모두 쓰는 페이지라면: -->
+      <div id="box-low"></div>
+      <div id="box-base"></div>
+      <div id="box-high"></div>
+
+      <!-- 기준값만 쓰는 페이지라면 위 3개 대신 아래 한 줄만 두고 나머지 div는 삭제해도 됩니다.
+      <div id="box-base-only"></div>
+      -->
+    </div>
+    <!-- Preview Modal -->
+    <div
+      id="previewMask"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 9998;
+      "
+    ></div>
+    <div
+      id="previewModal"
+      style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        /* 가운데 정렬 → 전체 채우기 */
+        align-items: stretch;
+        justify-content: stretch;
+      "
+    >
+      <div style="background:#fff; border-radius:0; box-shadow:none;
+            width:100vw; height:100vh; overflow:auto; display:flex; flex-direction:column;">
+  <div style="position:sticky; top:0; z-index:1; background:#fff;
+              display:flex; align-items:center; justify-content:space-between;
+              padding:14px 16px; border-bottom:1px solid #e5e7eb">
+    <strong style="font-size:16px">미리보기</strong>
+    <button id="closePreview"
+            style="padding:6px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;cursor:pointer">
+      닫기
+    </button>
+  </div>
+
+  <!-- (1) 상단 정보/이미지 -->
+  <div style="padding:16px; flex:0 0 auto;">
+    <div id="previewInfo"
+         style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px"></div>
+    <div>
+      <div style="font-size:12px;color:#555;margin-bottom:6px">사진 미리보기</div>
+      <div id="previewPhotos"
+           style="display:grid;grid-template-columns:repeat(5,minmax(80px,1fr));gap:8px"></div>
+    </div>
+  </div>
+
+  <!-- (2) 7세그 패널 -->
+  <div style="padding:0 16px 16px; flex:1 1 auto;">
+    <div id="previewSegments" style="display:flex;gap:24px;flex-wrap:wrap">
+      <div id="p-low"></div>
+      <div id="p-base"></div>
+      <div id="p-high"></div>
+    </div>
+  </div>
+</div>
+
+
+        <!-- (2) 7세그 패널 -->
+        <div style="padding: 0 16px 16px">
+          <div
+            id="previewSegments"
+            style="display: flex; gap: 24px; flex-wrap: wrap"
+          >
+            <div id="p-low"></div>
+            <div id="p-base"></div>
+            <div id="p-high"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 스크립트 로딩 순서: core → calc → component → page -->
+    <script src="./js/lib/seven-seg-core.js"></script>
+    <script src="./js/lib/calc.js"></script>
+    <script src="./js/lib/ambiguity.js"></script>
+    <script src="./js/components/seg-box.js"></script>
+    <script src="./js/components/seg-box-mode2.js"></script>
+    <script src="./js/pages/segment-full.js"></script>
+    <script src="./js/pages/product-form.js"></script>
+    <script src="./js/pages/segment-full.js"></script>
+  </body>
+</html>
